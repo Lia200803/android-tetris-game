@@ -234,6 +234,8 @@ fun TetrisGameScreen() {
         }
 
         var lastMoveTime by remember { mutableStateOf(0L) }
+        var pressStartTime by remember { mutableStateOf(0L) }
+        var pressPosition by remember { mutableStateOf<Pair<Float, Float>?>(null) }
         
         Box(
             modifier = Modifier
@@ -248,24 +250,53 @@ fun TetrisGameScreen() {
                             val x = offset.x
                             val y = offset.y
                             
+                            pressStartTime = System.currentTimeMillis()
+                            pressPosition = Pair(x, y)
+                            
+                            tryAwaitRelease()
+                            
+                            val pressDuration = System.currentTimeMillis() - pressStartTime
+                            
                             when {
                                 y < screenHeight * 0.1 -> {
                                 }
-                                y > screenHeight * 0.9 -> {
+                                y > screenHeight * 0.83 -> {
                                     game.drop()
                                     soundManager.playDrop()
                                     performHapticFeedback(context)
                                 }
                                 x < screenWidth * 0.33 -> {
-                                    game.queueMoveLeft()
+                                    if (pressDuration > 200) {
+                                        val repeatCount = (pressDuration / 60).toInt()
+                                        repeat(repeatCount) {
+                                            game.queueMoveLeft()
+                                        }
+                                    } else {
+                                        game.queueMoveLeft()
+                                    }
                                 }
                                 x > screenWidth * 0.66 -> {
-                                    game.queueMoveRight()
+                                    if (pressDuration > 200) {
+                                        val repeatCount = (pressDuration / 60).toInt()
+                                        repeat(repeatCount) {
+                                            game.queueMoveRight()
+                                        }
+                                    } else {
+                                        game.queueMoveRight()
+                                    }
                                 }
                                 else -> {
-                                    game.queueRotate()
+                                    if (pressDuration > 200) {
+                                        val repeatCount = (pressDuration / 150).toInt()
+                                        repeat(repeatCount) {
+                                            game.queueRotate()
+                                        }
+                                    } else {
+                                        game.queueRotate()
+                                    }
                                 }
                             }
+                            pressPosition = null
                         },
                         onDoubleTap = { offset ->
                             val screenHeight = size.height
